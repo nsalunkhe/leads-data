@@ -4,8 +4,8 @@ var app = express();
 
 app.use(bodyParser.json());
 
-var token = process.env.TOKEN || 'token';
-var secret = process.env.APP_SECRET || 'secret';
+var token = process.env.TOKEN
+var secret = process.env.APP_SECRET
 var received_updates = [];
 
 app.set('port', (process.env.PORT || 5000));

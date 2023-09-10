@@ -1,18 +1,24 @@
-var bodyParser = require('body-parser');
-var express = require('express');
-var app = express();
+require('dotenv').config();
+const bodyParser = require('body-parser');
+const express = require('express');
+const app = express();
+const connectDB = require('./config/db'); // Import the MongoDB connection from db.js
+const mongoose = require('mongoose');
 
 app.use(bodyParser.json());
 
-var token = process.env.TOKEN
-var secret = process.env.APP_SECRET
-var received_updates = [];
+const token = process.env.TOKEN;
+const secret = process.env.APP_SECRET;
+const received_updates = [];
 
-app.set('port', (process.env.PORT || 5000));
+app.set('port', process.env.PORT || 5000);
 
 app.get('/', function (req, res) {
   res.send('<pre>' + JSON.stringify(received_updates, null, 2) + '</pre>');
 });
+
+// Connect to MongoDB using the imported connectDB function
+connectDB();
 
 app.get('/facebook', function (req, res) {
   if (
@@ -25,7 +31,7 @@ app.get('/facebook', function (req, res) {
   }
 });
 
-app.post('/facebook', function (req, res) {
+app.post('/facebook', async function (req, res) {
   console.log('Facebook request body:', req.body);
 
   // You can check the secret if needed
@@ -36,9 +42,20 @@ app.post('/facebook', function (req, res) {
   }
 
   console.log('Request header X-Hub-Signature validated');
-  // Process the Facebook updates here
-  received_updates.unshift(req.body);
-  res.sendStatus(200);
+
+  try {
+    // Save the entire request body to MongoDB
+    const connection = mongoose.connection; // Use the existing connection
+    const collection = connection.collection('facebook_responses');
+    const result = await collection.insertOne(req.body);
+    console.log('Response saved to MongoDB:', result);
+
+    received_updates.unshift(req.body);
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Error saving response to MongoDB:', error);
+    res.sendStatus(500); // Internal server error
+  }
 });
 
 app.listen(app.get('port'), function () {

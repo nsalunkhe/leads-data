@@ -33,6 +33,12 @@ app.get('/facebook', function (req, res) {
 
 app.post('/facebook', async function (req, res) {
   console.log('Facebook request body:', req.body);
+ 
+  if (req.query['hub.verify_token'] !== token) {
+    console.log('Warning - Verify Token does not match');
+    res.sendStatus(403); // Forbidden status code
+    return;
+  }
 
   // You can check the secret if needed
   if (req.headers['x-hub-signature'] !== secret) {
